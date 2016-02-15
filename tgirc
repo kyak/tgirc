@@ -1,0 +1,184 @@
+#!/bin/bash
+# -*- tcl -*-
+# The next line is executed by /bin/sh, but not tcl \
+exec tclsh -encoding "utf-8" "$0" ${1+"$@"}
+
+encoding system utf-8
+package require tls
+package require http
+::http::register https 443 [list ::tls::socket -tls1 1]
+package require json
+
+source "tgirc.settings"
+
+set ::tgurl "https://api.telegram.org/bot${::tgtoken}"
+set ::tgupdateid 0
+set ::registered 0
+set ::joined 0
+set ::isconnected 0
+set ::pingts [clock seconds]
+
+# simple IRC client, adapted from http://wiki.tcl.tk/13134
+proc ircconnect {} {
+	puts "ircconnect.."
+	# simply return if can't connect. ircloop will handle reconnection
+	if {[catch {set ::irc [::tls::socket $::server $::port]}]} {
+		return
+	}
+	fconfigure $::irc -blocking 0 -buffering line -translation crlf -encoding utf-8
+	set ::isconnected 1
+	fileevent $::irc readable ircrecv
+	ircsend "NICK $::nick"
+	ircsend "USER $::nick 0 * :$::user"
+}
+
+proc ircdisconnect {} {
+	puts "ircdisconnect.."
+	fileevent $::irc readable {}
+	close $::irc
+	set ::joined 0
+	set ::registered 0
+	set ::isconnected 0
+	set ::pingts [clock seconds]
+	unset ::irc
+}
+
+proc ircrecv {} {
+	# close and return upon eof or read error
+	if {[eof $::irc]} {
+		ircdisconnect
+		return
+	}
+	if {[catch {gets $::irc line}]} {
+		ircdisconnect
+		return
+	}
+	puts "ircrecv: $line"
+	# handle PING messages from server
+	if {[lindex [split $line] 0] eq "PING"} {
+		# update ping timestamp
+		set ::pingts [clock seconds]
+		ircsend "PONG [info hostname] [lindex [split $line] 1]"
+		return
+	}
+	# parse line from server
+	if [regexp {:([^!]*)![^ ].* +PRIVMSG ([^ :]+) +:(.*)} $line -> nick target msg] {
+		# handle privmsg
+		if {[regexp $::regmatch $msg]} {
+			# only for messages with url
+			if {[tgsendMessage "$nick: $msg"] == 0} {
+				ircsend "PRIVMSG $target :Unable to post to Telegram..."
+			}
+		}
+	} elseif {[regexp {^:([^ ]+) +([^ ]+) +([^ ]+) +(.*)} $line -> server code target rest]} {
+		# handle server messages
+		switch -- $code {
+			001 {
+				set ::registered 1
+			}
+		}
+	}
+}
+
+proc ircsend {str} {
+	# TODO: handle errors from puts to $::irc
+	puts "ircsend: $str"
+	puts $::irc $str
+	flush $::irc
+}
+
+proc ircloop {} {
+#	puts "ircloop: last ping [expr [clock seconds] - $::pingts] sec ago"
+	# didn't receive ping from server too long, disconnect
+	if {[expr [clock seconds] - $::pingts] > $::pingtimeout} {
+		ircdisconnect
+	}
+	if {!$::isconnected} {
+		ircconnect
+	}
+	if {!$::joined && $::registered} {
+		ircsend "nickserv identify $::pass"
+		ircsend "JOIN $::channel"
+		set ::joined 1
+	}
+	after 2000 ircloop
+}
+
+proc tgOK {jdata} {
+	set ok [dict get $jdata "ok"]
+	if {$ok eq "true"} {
+		return 1
+	} else {
+		return 0
+	}
+}
+
+proc tgsendMessage {msg} {
+	set url "$::tgurl/sendMessage"
+	set query [::http::formatQuery chat_id $::tgchat text $msg]
+	set data [::http::data [::http::geturl $url -query $query]]
+	set jdata [::json::json2dict $data]
+	set status [tgOK $jdata]
+	if {$status == 0} {
+		puts "Error sending to Telegram: [dict get $jdata "description"]"
+	}
+	return $status
+}
+
+proc tggetUpdates {offset} {
+	set url "$::tgurl/getUpdates"
+	set query [::http::formatQuery offset $offset timeout $::tglongpoll]
+	set data [::http::data [::http::geturl $url -query $query -timeout [expr $::tglongpoll*1000*2]]]
+	set jdata [::json::json2dict $data]
+	set status [tgOK $jdata]
+	if {$status == 0} {
+		puts "Error getting updates from Telegram: [dict get $jdata "description"]"
+		return $status
+	}
+	if {!$::joined} {
+		puts "Not joined to any channel, holding Telegram updates..."
+		return 0
+	}
+	set results [dict get $jdata "result"]
+	if {$results ne ""} {
+		foreach result $results {
+			set update_id [dict get $result "update_id"]
+			set message [dict get $result "message"]
+			if {[dict exists $message "from"]} {
+				set from [dict get $message "from" "first_name"]
+			} else {
+				set from "<empty>"
+			}
+			if {[dict exists $message "chat" "title"]} {
+				set chat [dict get $message "chat" "title"]
+			} else {
+				set chat "private"
+			}
+			if {[dict exists $message "text"]} {
+				set text [dict get $message "text"]
+			} else {
+				# only plain text can be sent back to IRC, so do nothing
+				set text "<empty>"
+			}
+			#puts "$from: $text"
+			if {[regexp $::regmatch $text]} {
+				ircsend "PRIVMSG $::channel :$from: $text"
+			}
+		}
+		# return latest update id
+		return $update_id
+	} else {
+#		puts "No updates in Telegram.."
+	}
+}
+
+proc tgloop {} {
+#	puts "tgloop.."
+	set ::tgupdateid [tggetUpdates [expr $::tgupdateid + 1]]
+	after 2000 tgloop
+}
+
+ircloop
+tgloop
+vwait forever
+

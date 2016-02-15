@@ -1,0 +1,25 @@
+# IRC bot nick
+set ::nick "myBotName"
+# IRC bot password for nickserv
+set ::pass "myBotPass"
+# IRC bot username
+set ::user "myBotUserName"
+# IRC server IP or hostname
+set ::server "irc.freenode.net"
+# IRC server port (SSL only)
+set ::port "7000"
+# IRC channel name
+set ::channel "#test"
+# IRC ping timeout (no ping requests from server)
+set ::pingtimeout "180"
+
+# Telegram bot token (this one is fake example, don't use it)
+set ::tgtoken "123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"
+# Telegram chat id (get it using https://api.telegram.org/bot<token>/getUpdates after inviting bot to the grop)
+set ::tgchat "-12345678"
+# Time interval for "Long Poll" in seconds
+set ::tglongpoll "60"
+
+# Regexp pattern to only match particular text for bidirectional flow. IRC and Telegram messages not matching this pattern will be ignored. Use {.*} to match all messages.
+set ::regmatch {https?:\/\/}
+

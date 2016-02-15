@@ -143,7 +143,12 @@ proc tggetUpdates {offset} {
 	if {$results ne ""} {
 		foreach result $results {
 			set update_id [dict get $result "update_id"]
-			set message [dict get $result "message"]
+			if {[dict exists $result "message"]} {
+				set message [dict get $result "message"]
+			} else {
+				# not a message, continue
+				continue
+			}
 			if {[dict exists $message "from"]} {
 				set from [dict get $message "from" "first_name"]
 			} else {

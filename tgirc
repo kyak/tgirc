@@ -82,10 +82,11 @@ proc ircrecv {} {
 }
 
 proc ircsend {str} {
-	# TODO: handle errors from puts to $::irc
 	putverbose "ircsend: $str" 1
-	puts $::irc $str
-	flush $::irc
+	if [catch {
+		puts $::irc $str
+		flush $::irc
+	}] { ircdisconnect }
 	# update ping timestamp
 	set ::pingts [clock seconds]
 }
@@ -191,12 +192,9 @@ proc tgloop {} {
 }
 
 proc putverbose {msg level} {
-	if {$::verbose >= $level} {
-		puts $msg
-	}
+	if {$::verbose >= $level} { puts $msg }
 }
 
 ircloop
 tgloop
 vwait forever
-

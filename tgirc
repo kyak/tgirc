@@ -64,8 +64,9 @@ proc ircrecv {} {
 	# parse line from server
 	if [regexp {:([^!]*)![^ ].* +PRIVMSG ([^ :]+) +:(.*)} $line -> nick target msg] {
 		# handle privmsg
-		if {[regexp $::regmatch $msg]} {
-			# only for messages with url
+		if {[regexp $::regmatch $msg] && ($target eq $::channel)} {
+			# only act on messages matching $::regmatch pattern
+			# only if target matches IRC channel from settings
 			if {[tgsendMessage "$nick: $msg"] == 0} {
 				ircsend "PRIVMSG $target :Unable to post to Telegram..."
 			}
@@ -148,6 +149,15 @@ proc tggetUpdates {offset} {
 				set message [dict get $result "message"]
 			} else {
 				# not a message, continue
+				continue
+			}
+			if {[dict exists $message "chat" "id"]} {
+				set chatid [dict get $message "chat" "id"]
+			} else {
+				set chatid ""
+			}
+			if {$chatid ne $::tgchat} {
+				# ignore this chat
 				continue
 			}
 			if {[dict exists $message "from"]} {

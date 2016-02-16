@@ -186,7 +186,7 @@ proc tggetUpdates {offset} {
 
 proc tgloop {} {
 	putverbose "tgloop.." 2
-	set ::tgupdateid [tggetUpdates [expr $::tgupdateid + 1]]
+	catch {set ::tgupdateid [tggetUpdates [expr $::tgupdateid + 1]]}
 	after 2000 tgloop
 }
 

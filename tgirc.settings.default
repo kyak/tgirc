@@ -23,3 +23,5 @@ set ::tglongpoll "60"
 # Regexp pattern to only match particular text for bidirectional flow. IRC and Telegram messages not matching this pattern will be ignored. Use {.*} to match all messages.
 set ::regmatch {https?:\/\/}
 
+# Be verbose
+set ::verbose 0

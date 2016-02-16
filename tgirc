@@ -53,7 +53,7 @@ proc ircrecv {} {
 		ircdisconnect
 		return
 	}
-#	puts "ircrecv: $line"
+	putverbose "ircrecv: $line"
 	# handle PING messages from server
 	if {[lindex [split $line] 0] eq "PING"} {
 		# update ping timestamp
@@ -83,13 +83,13 @@ proc ircrecv {} {
 
 proc ircsend {str} {
 	# TODO: handle errors from puts to $::irc
-#	puts "ircsend: $str"
+	putverbose "ircsend: $str"
 	puts $::irc $str
 	flush $::irc
 }
 
 proc ircloop {} {
-#	puts "ircloop: last ping [expr [clock seconds] - $::pingts] sec ago"
+	putverbose "ircloop: last ping [expr [clock seconds] - $::pingts] sec ago"
 	# didn't receive ping from server too long, disconnect
 	if {[expr [clock seconds] - $::pingts] > $::pingtimeout} {
 		ircdisconnect
@@ -143,7 +143,7 @@ proc tggetUpdates {offset} {
 	set results [dict get $jdata "result"]
 	if {$results ne ""} {
 		foreach result $results {
-#			puts "telrecv: $result"
+			putverbose "telrecv: $result"
 			set update_id [dict get $result "update_id"]
 			if {[dict exists $result "message"]} {
 				set message [dict get $result "message"]
@@ -176,7 +176,6 @@ proc tggetUpdates {offset} {
 				# only plain text can be sent back to IRC, so do nothing
 				set text "<empty>"
 			}
-#			puts "$from: $text"
 			if {[regexp $::regmatch $text]} {
 				ircsend "PRIVMSG $::channel :$from: $text"
 			}
@@ -184,14 +183,20 @@ proc tggetUpdates {offset} {
 		# return latest update id
 		return $update_id
 	} else {
-#		puts "No updates in Telegram.."
+		putverbose "No updates in Telegram.."
 	}
 }
 
 proc tgloop {} {
-#	puts "tgloop.."
+	putverbose "tgloop.."
 	set ::tgupdateid [tggetUpdates [expr $::tgupdateid + 1]]
 	after 2000 tgloop
+}
+
+proc putverbose {msg} {
+	if {$::verbose} {
+		puts $msg
+	}
 }
 
 ircloop

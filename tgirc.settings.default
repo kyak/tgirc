@@ -1,9 +1,9 @@
-# IRC bot nick
+# IRC bot nick/username
 set ::nick "myBotName"
 # IRC bot password for nickserv
 set ::pass "myBotPass"
-# IRC bot username
-set ::user "myBotUserName"
+# IRC bot realname
+set ::user "myBotRealName"
 # IRC server IP or hostname
 set ::server "irc.freenode.net"
 # IRC server port (SSL only)

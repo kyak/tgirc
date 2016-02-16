@@ -165,16 +165,16 @@ proc tggetUpdates {offset} {
 			} else {
 				set from "<empty>"
 			}
-			if {[dict exists $message "chat" "title"]} {
-				set chat [dict get $message "chat" "title"]
-			} else {
-				set chat "private"
-			}
+			#if {[dict exists $message "chat" "title"]} {
+			#	set chat [dict get $message "chat" "title"]
+			#} else {
+			#	set chat "private"
+			#}
 			if {[dict exists $message "text"]} {
 				set text [dict get $message "text"]
 			} else {
 				# only plain text can be sent back to IRC, so do nothing
-				set text "<empty>"
+				continue
 			}
 			if {[regexp $::regmatch $text]} {
 				ircsend "PRIVMSG $::channel :$from: $text"

@@ -86,6 +86,8 @@ proc ircsend {str} {
 	putverbose "ircsend: $str" 1
 	puts $::irc $str
 	flush $::irc
+	# update ping timestamp
+	set ::pingts [clock seconds]
 }
 
 proc ircloop {} {
@@ -165,11 +167,6 @@ proc tggetUpdates {offset} {
 			} else {
 				set from "<empty>"
 			}
-			#if {[dict exists $message "chat" "title"]} {
-			#	set chat [dict get $message "chat" "title"]
-			#} else {
-			#	set chat "private"
-			#}
 			if {[dict exists $message "text"]} {
 				set text [dict get $message "text"]
 			} else {

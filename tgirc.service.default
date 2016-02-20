@@ -1,0 +1,11 @@
+# make unit available for start and other commands:
+# systemctl link /home/user/tgirc/tgirc.service
+[Unit]
+Description=IRC-Telegram gateway bot
+
+[Service]
+ExecStart=/home/user/tgirc/tgirc
+User=ircd
+
+[Install]
+WantedBy=multi-user.target

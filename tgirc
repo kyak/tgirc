@@ -9,7 +9,7 @@ package require http
 ::http::register https 443 [list ::tls::socket -tls1 1]
 package require json
 
-source "tgirc.settings"
+source "[file normalize [file dirname $argv0]]/tgirc.settings"
 
 set ::tgurl "https://api.telegram.org/bot${::tgtoken}"
 set ::tgupdateid 0

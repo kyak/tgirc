@@ -34,7 +34,9 @@ proc ircconnect {} {
 
 proc ircdisconnect {} {
 	puts "ircdisconnect.."
-	fileevent $::irc readable {}
+	if {[catch {fileevent $::irc readable {}}]} {
+		return
+	}
 	close $::irc
 	set ::joined 0
 	set ::registered 0

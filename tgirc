@@ -111,7 +111,11 @@ proc ircloop {} {
 }
 
 proc tgOK {jdata} {
-	set ok [dict get $jdata "ok"]
+	if {[dict exists $jdata "ok"]} {
+		set ok [dict get $jdata "ok"]
+	} else {
+		set ok "false"
+	}
 	if {$ok eq "true"} {
 		return 1
 	} else {
@@ -138,7 +142,12 @@ proc tggetUpdates {offset} {
 	set jdata [::json::json2dict $data]
 	set status [tgOK $jdata]
 	if {$status == 0} {
-		puts "Error getting updates from Telegram: [dict get $jdata "description"]"
+		if {[dict exists $jdata "description"]} {
+			set desc [dict get $jdata "description"]
+		} else {
+			set desc "No description.."
+		}
+			puts "Error getting updates from Telegram: $desc"
 		return $status
 	}
 	if {!$::joined} {

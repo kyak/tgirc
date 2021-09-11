@@ -1,5 +1,7 @@
 # IRC - Telegram gateway
 
+Archived. See https://gitlab.com/kyak/tgirc
+
 tgirc is a simple IRC - Telegram bidirectional gateway.
 
 It is written in TCL and requires tcllib only.
